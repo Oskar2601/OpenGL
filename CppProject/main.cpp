@@ -1,4 +1,6 @@
 #include<vector>
+#include<chrono>
+#include<thread>
 #include<iostream>
 #include<glad/glad.h>
 #include<GLFW/glfw3.h>
@@ -17,6 +19,7 @@ private:
 
 public:
 	float deltaTime();
+	void frameCap(float frameRate, float frameEnd);
 };
 
 
@@ -34,6 +37,29 @@ float TimeClass::deltaTime()
 	cpy = glfwGetTime();
 	glfwSetTime(0.0f);
 	return cpy;
+}
+
+void TimeClass::frameCap(float frameRate, float frameEnd) {
+	
+
+	if (frameEnd < 0.1f / frameRate) {
+		bool sleep = true;
+		while (sleep)
+		{
+			auto start = std::chrono::high_resolution_clock::now();
+
+			if (frameEnd > 0.1f / frameRate)
+				sleep = false;
+
+			auto end = std::chrono::high_resolution_clock::now();
+
+			frameEnd += std::chrono::duration<float>(end - start).count();
+		}
+	}
+
+	
+
+	//std::cout << end << "ms (" << "fps: " << 1.0f / end << ")" << std::endl;
 }
 
 
@@ -68,22 +94,38 @@ void Square::update(float xPos, float yPos)
 
 float velX = 0.0f;
 float velY = 0.0f;
+float jumpPower = 2.0f;
+
+void jump_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+		velY += jumpPower;
+}
+
+float frameRate = 144.0f;
+float localX = 0.0f;
+float localY = 0.0f;
+
+
+
+float gravity = 2.0f;
+float driftFloor = 1.0f;
+float drift = 0.3f;
+float speed = 5.0f;
 
 double deltaTime = 0.0f;
 
+bool switched = false;
 
 // Indices for vertices order
 GLuint indices[] =
 {
 	0, 1, 2, // Lower left triangle
 	1, 2, 3 // Lower right triangle
-	//5, 4, 1 // Upper triangle
 };
 
 
-float posVert;
 
-bool switched = false;
 
 
 
@@ -99,7 +141,7 @@ int main()
 	// Only modern functions
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	Square SquareObj;
+	
 
 	// Create a GLFWwindow object of 800 by 800 pixels, naming it "OpenGL"
 	GLFWwindow* window = glfwCreateWindow(800, 800, "OpenGL", NULL, NULL);
@@ -122,6 +164,8 @@ int main()
 
 	// Gens shaders.
 	Shader shaderProgram("default.vert", "default.frag");
+	TimeClass timeObj;
+	Square squareObj;
 
 	// Gen vao
 	VAO VAO1;
@@ -146,29 +190,21 @@ int main()
 	GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale");
 
 
-
-	float localX = 0.0f;
-	float localY = 0.0f;
-
 	float floor = -0.616f;
 	float roof = 0.665f;
 	float leftWall = -0.666f;
 	float rightWall = 0.62f;
 
-	float gravity = 2.0f;
-	float driftFloor = 1.0f;
-	float drift = 0.3f;
-	float jumpPower = 8.0f;
-	float speed = 5.0f;
-
 
 	// Main while loop
 	while (!glfwWindowShouldClose(window))
 	{
+		// frame counter
+		auto start = std::chrono::high_resolution_clock::now();
+
+		glfwSetKeyCallback(window, jump_callback);
 
 		// Physics
-
-		if (glfwGetKey(window, GLFW_KEY_W)) velY += jumpPower * deltaTime;
 
 		if (glfwGetKey(window, GLFW_KEY_A)) velX -= speed * deltaTime;
 
@@ -235,7 +271,7 @@ int main()
 		// Gets ID of uniform called "scale"
 		//GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale");
 
-		SquareObj.update(localX, localY);
+		squareObj.update(localX, localY);
 
 		VAO VAO1;
 		VAO1.Bind();
@@ -271,8 +307,13 @@ int main()
 		// Take care of all GLFW events
 		glfwPollEvents();
 
-		TimeClass timeObj;
+		
 		deltaTime = timeObj.deltaTime();
+
+		auto end = std::chrono::high_resolution_clock::now();
+		float endf = std::chrono::duration<float>(end - start).count();
+
+		timeObj.frameCap(frameRate, endf);
 	}
 
 
