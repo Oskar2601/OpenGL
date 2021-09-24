@@ -11,6 +11,7 @@
 #include"VBO.h"
 #include"EBO.h"
 
+using namespace std::chrono_literals;
 
 class TimeClass
 {
@@ -44,6 +45,8 @@ void TimeClass::frameCap(float frameRate, float frameEnd) {
 
 	if (frameEnd < 0.1f / frameRate) {
 		bool sleep = true;
+
+
 		while (sleep)
 		{
 			auto start = std::chrono::high_resolution_clock::now();
@@ -170,21 +173,15 @@ int main()
 	// Gen vao
 	VAO VAO1;
 
-	// Bind vao
-	VAO1.Bind();
-
 	// Generates VBO and links it to vertices
 	VBO VBO1(vertices, sizeof(vertices));
 	// Generates EBO and links it to indices
 	EBO EBO1(indices, sizeof(indices));
 
-	// Links VBO attributes such as coordinates and colors to VAO
-	VAO1.LinkAttrib(VBO1, 0, 3, GL_FLOAT, 4 * sizeof(float), (void*)0);
-	VAO1.LinkAttrib(VBO1, 1, 3, GL_FLOAT, 4 * sizeof(float), (void*)(3 * sizeof(float)));
 	// Unbind all to prevent accidentally modifying them
-	VAO1.Unbind();
-	VBO1.Unbind();
-	EBO1.Unbind();
+	//VAO1.Unbind();
+	//VBO1.Unbind();
+	//EBO1.Unbind();
 
 	// Gets ID of uniform called "scale"
 	GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale");
@@ -273,7 +270,7 @@ int main()
 
 		squareObj.update(localX, localY);
 
-		VAO VAO1;
+		
 		VAO1.Bind();
 
 		// Generates Vertex Buffer Object and links it to vertices
@@ -290,18 +287,22 @@ int main()
 		EBO1.Unbind();
 
 		// Specify the color of the background
-		// glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
-		glClearColor(0.9f, 0.9f, 0.9f, 1.0f);
+		glClearColor(0.96f, 0.96f, 0.96f, 1.0f);
 		// Clean the back buffer and assign the new color to it
 		glClear(GL_COLOR_BUFFER_BIT);
+
+
 		// Tell OpenGL which Shader Program we want to use
 		shaderProgram.Activate();
 		// Assigns a value to the uniform; NOTE: Must always be done after activating the Shader Program
 		glUniform1f(uniID, 0.5f);
+
 		// Bind the VAO so OpenGL knows to use it
 		VAO1.Bind();
 		// Draw primitives, number of indices, datatype of indices, index of indices
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+
 		// Swap the back buffer with the front buffer
 		glfwSwapBuffers(window);
 		// Take care of all GLFW events
